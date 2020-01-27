@@ -6,6 +6,7 @@ const moment = require("moment");
 const fs = require("fs");
 const path = require("path");
 const csv = require("csvtojson");
+const {performance}=require('perf_hooks')
 
 const scrapeNps = async () => {
   //scrapes the nps from podium
@@ -101,6 +102,7 @@ const attNps = async db => {
     "select first_name, last_name, proutes_id from employees where proutes_type !=2"
   );
 
+
   // and is_active=1
   let promises = [];
   let start = performance.now();
@@ -113,7 +115,7 @@ const attNps = async db => {
       employees[i].last_name.charAt(0),
       "_"
     )}%`;
-    console.log(likeStr, i);
+    // console.log(likeStr, i);
     promises.push(db.att_podium_nps([employees[i].proutes_id, likeStr]));
   }
 
@@ -139,9 +141,9 @@ const fireAll = async () => {
     connectionString: DB_STRING,
     ssl: true
   });
-  await scrapeNps();
   await addNps(database);
   await attNps(database);
+//   await scrapeNps();
   console.log("all finished!");
 };
 fireAll();
