@@ -35,7 +35,7 @@ const scrapeNps = async () => {
 
   await page.waitForSelector("#selenium-insights");
 
-  await page.goto(P_SECRET_URL, { waitUntil: "networkidle2" });
+  await page.goto(process.env.P_SECRET_URL, { waitUntil: "networkidle2" });
   await page.waitFor(10000);
 
   await page.goto(process.env.P_D_URL, { waitUntil: "networkidle2" });
@@ -56,14 +56,23 @@ const addNps = async db => {
   //change me
   const csvFilePath = path.resolve(
     __dirname,
-    "../../../../../Downloads/NPS+Export+(Based+on+Service+Date).csv"
+    "../../../Downloads/NPS+Export+(Based+on+Service+Date).csv"
   );
   const jsonArray = await csv().fromFile(csvFilePath);
-  console.log(jsonArray[0], "zero index");
-  for (let i = 0; i < jsonArray.length; i++) {
-    let base = jsonArray[i];
+
+  let filtered = jsonArray.filter(el => {
+    return (
+      moment(el["Response Date"]).format("YYYY-MM-DD") ===
+      moment()
+        .subtract(1, "day")
+        .format("YYYY-MM-DD")
+    );
+  });
+  console.log(filtered.length, "array length");
+  for (let i = 0; i < filtered.length; i++) {
+    let base = filtered[i];
     //db adder
-    console.log("progress", i, "/", jsonArray.length);
+    console.log("progress", i, "/", filtered.length);
     //add in logic to check the add date. only add from yesterday?
 
     try {
@@ -87,9 +96,52 @@ const addNps = async db => {
   console.log("finished adding podium data");
 };
 
+const attNps = async db => {
+  let employees = await db.query(
+    "select first_name, last_name, proutes_id from employees where proutes_type !=2"
+  );
+
+  // and is_active=1
+  let promises = [];
+  let start = performance.now();
+  console.log(start / 1000, "start time");
+  for (let i = 0; i < employees.length; i++) {
+    let likeStr = `${employees[i].first_name.replace(
+      employees[i].first_name.charAt(0),
+      "%_"
+    )}%${employees[i].last_name.replace(
+      employees[i].last_name.charAt(0),
+      "_"
+    )}%`;
+    console.log(likeStr, i);
+    promises.push(db.att_podium_nps([employees[i].proutes_id, likeStr]));
+  }
+
+  Promise.all(promises).then(() => {
+    let finish = performance.now();
+
+    try {
+      const delPath = path.resolve(
+        __dirname,
+        "../../../../../Downloads/NPS+Export+(Based+on+Service+Date).csv"
+      );
+      fs.unlinkSync(delPath);
+    } catch (error) {
+      console.log(error, "err with delete");
+    }
+    console.log(`time taken ${finish - start} millis`);
+    console.log("att nps finished, file deleted");
+  });
+};
+
 const fireAll = async () => {
   let database = await massive({
     connectionString: DB_STRING,
     ssl: true
   });
+  await scrapeNps();
+  await addNps(database);
+  await attNps(database);
+  console.log("all finished!");
 };
+fireAll();
