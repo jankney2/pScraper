@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "massive": "^6.1.4",
+    "moment": "^2.24.0"
+  }
+}
