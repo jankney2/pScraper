@@ -141,9 +141,10 @@ const fireAll = async () => {
     connectionString: DB_STRING,
     ssl: true
   });
+    await scrapeNps();
   await addNps(database);
   await attNps(database);
-//   await scrapeNps();
+
   console.log("all finished!");
 };
 fireAll();
