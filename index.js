@@ -53,22 +53,29 @@ const scrapeNps = async () => {
   console.log("browser shut down");
 };
 
-const addNps = async db => {
+const addNps = async (db, seed) => {
   //change me
+  let start=performance.now()
   const csvFilePath = path.resolve(
     __dirname,
     "../../../Downloads/NPS+Export+(Based+on+Service+Date).csv"
   );
   const jsonArray = await csv().fromFile(csvFilePath);
+let filtered
+let promises=[]
+if(!seed){
+    filtered = jsonArray.filter(el => {
+     return (
+       moment(el["Response Date"]).format("YYYY-MM-DD") ===
+       moment()
+         .subtract(1, "day")
+         .format("YYYY-MM-DD")
+     );
+   });
 
-  let filtered = jsonArray.filter(el => {
-    return (
-      moment(el["Response Date"]).format("YYYY-MM-DD") ===
-      moment()
-        .subtract(1, "day")
-        .format("YYYY-MM-DD")
-    );
-  });
+}else {
+    filtered=jsonArray
+}
   console.log(filtered.length, "array length");
   for (let i = 0; i < filtered.length; i++) {
     let base = filtered[i];
@@ -77,7 +84,7 @@ const addNps = async db => {
     //add in logic to check the add date. only add from yesterday?
 
     try {
-      await db.add_nps([
+      promises.push(db.add_nps([
         base["Invite Date"],
         base["Response Date"],
         base["Phone"],
@@ -86,15 +93,16 @@ const addNps = async db => {
         base["Customer Name"],
         +base["Rating"],
         base["Comment"]
-      ]);
+      ]));
     } catch (error) {
       console.log(error, "error with podium adder");
     }
 
     //delete downloaded file
   }
-
-  console.log("finished adding podium data");
+Promise.all(promises).then(()=>{
+    console.log("finished adding podium data", performance.now()-start);
+})
 };
 
 const attNps = async db => {
@@ -125,7 +133,7 @@ const attNps = async db => {
     try {
       const delPath = path.resolve(
         __dirname,
-        "../../../../../Downloads/NPS+Export+(Based+on+Service+Date).csv"
+        "../../../Downloads/NPS+Export+(Based+on+Service+Date).csv"
       );
       fs.unlinkSync(delPath);
     } catch (error) {
