@@ -82,6 +82,18 @@ if(!seed){
     //db adder
     console.log("progress", i, "/", filtered.length);
     //add in logic to check the add date. only add from yesterday?
+    let identifier=await JSON.stringify(
+      {
+      invite:base["Invite Date"],
+        res:base["Response Date"],
+        phone:base["Phone"],
+        loc:base["Location"],
+        tech:base["Technician"],
+        customer:base["Customer Name"],
+        rating:+base["Rating"],
+        comment:base["Comment"]
+      }
+        )
 
     try {
       promises.push(db.add_nps([
@@ -92,7 +104,8 @@ if(!seed){
         base["Technician"],
         base["Customer Name"],
         +base["Rating"],
-        base["Comment"]
+        base["Comment"], 
+        identifier
       ]));
     } catch (error) {
       console.log(error, "error with podium adder");
