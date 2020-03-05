@@ -21,14 +21,4 @@ insert into podium_nps (
     current_date, 
     $9
 )on conflict(json_string)
-do update set 
-    invite_date=$1, 
-    response_date=$2, 
-    phone=$3, 
-    office=$4, 
-    technician=$5, 
-    customer=$6, 
-    rating=$7, 
-    comment=$8 
-where podium_nps.json_string=$9
-
+do nothing

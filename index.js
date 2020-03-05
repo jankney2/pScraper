@@ -6,7 +6,7 @@ const moment = require("moment");
 const fs = require("fs");
 const path = require("path");
 const csv = require("csvtojson");
-const {performance}=require('perf_hooks')
+const { performance } = require("perf_hooks");
 
 const scrapeNps = async () => {
   //scrapes the nps from podium
@@ -55,48 +55,44 @@ const scrapeNps = async () => {
 
 const addNps = async (db, seed) => {
   //change me
-  let start=performance.now()
+  let start = performance.now();
   const csvFilePath = path.resolve(
     __dirname,
     "../../../Downloads/NPS+Export+(Based+on+Service+Date).csv"
   );
   const jsonArray = await csv().fromFile(csvFilePath);
-let filtered
-let promises=[]
-if(!seed){
+  let filtered;
+  let promises = [];
+  if (!seed) {
     filtered = jsonArray.filter(el => {
-     return (
-       moment(el["Response Date"]).format("YYYY-MM-DD") ===
-       moment()
-         .subtract(1, "day")
-         .format("YYYY-MM-DD")
-     );
-   });
-
-}else {
-    filtered=jsonArray
-}
+      return (
+        moment(el["Response Date"]).format("YYYY-MM-DD")>=
+        moment().startOf('month')
+          .format("YYYY-MM-DD")
+      );
+    });
+  } else {
+    filtered = jsonArray;
+  }
   console.log(filtered.length, "array length");
   for (let i = 0; i < filtered.length; i++) {
     let base = filtered[i];
     //db adder
     console.log("progress", i, "/", filtered.length);
     //add in logic to check the add date. only add from yesterday?
-    let identifier=await JSON.stringify(
-      {
-      invite:base["Invite Date"],
-        res:base["Response Date"],
-        phone:base["Phone"],
-        loc:base["Location"],
-        tech:base["Technician"],
-        customer:base["Customer Name"],
-        rating:+base["Rating"],
-        comment:base["Comment"]
-      }
-        )
+    let identifier = await JSON.stringify({
+      invite: base["Invite Date"],
+      res: base["Response Date"],
+      phone: base["Phone"],
+      loc: base["Location"],
+      tech: base["Technician"],
+      customer: base["Customer Name"],
+      rating: +base["Rating"],
+      comment: base["Comment"]
+    });
 
     try {
-      promises.push(db.add_nps([
+      await db.add_nps([
         base["Invite Date"],
         base["Response Date"],
         base["Phone"],
@@ -104,26 +100,39 @@ if(!seed){
         base["Technician"],
         base["Customer Name"],
         +base["Rating"],
-        base["Comment"], 
+        base["Comment"],
         identifier
-      ]));
+      ]);
+      // promises.push(
+      //   db.add_nps([
+      //     base["Invite Date"],
+      //     base["Response Date"],
+      //     base["Phone"],
+      //     base["Location"],
+      //     base["Technician"],
+      //     base["Customer Name"],
+      //     +base["Rating"],
+      //     base["Comment"],
+      //     identifier
+      //   ])
+      // );
     } catch (error) {
       console.log(error, "error with podium adder");
     }
 
     //delete downloaded file
   }
-Promise.all(promises).then(()=>{
-    console.log("finished adding podium data", performance.now()-start);
-})
+  Promise.all(promises).then(() => {
+    console.log("finished adding podium data", performance.now() - start);
+  });
 };
 
 const attNps = async db => {
   let employees = await db.query(
-    "select first_name, last_name, proutes_id from employees where proutes_type !=2"
+    "select first_name, last_name, proutes_id from employees where proutes_type !=2 and is_active=1 "
   );
 
-
+  console.log(employees.length, "emp length");
   // and is_active=1
   let promises = [];
   let start = performance.now();
@@ -136,25 +145,28 @@ const attNps = async db => {
       employees[i].last_name.charAt(0),
       "_"
     )}%`;
-    // console.log(likeStr, i);
-    promises.push(db.att_podium_nps([employees[i].proutes_id, likeStr]));
+    console.log(likeStr, i, employees.length);
+    // promises.push(db.att_podium_nps([employees[i].proutes_id, likeStr]));
+
+    await db.att_podium_nps([employees[i].proutes_id, likeStr]);
   }
+  const delPath = path.resolve(
+    __dirname,
+    /..\/..\/..\/Downloads\/NPS\+Export\+\(Based\+on\+Service\+Date\)\.csv/
+  );
+  fs.unlinkSync(delPath);
+  console.log('file deleted')
 
-  Promise.all(promises).then(() => {
-    let finish = performance.now();
+  // Promise.all(promises).then(() => {
+  //   let finish = performance.now();
 
-    try {
-      const delPath = path.resolve(
-        __dirname,
-        "../../../Downloads/NPS+Export+(Based+on+Service+Date).csv"
-      );
-      fs.unlinkSync(delPath);
-    } catch (error) {
-      console.log(error, "err with delete");
-    }
-    console.log(`time taken ${finish - start} millis`);
-    console.log("att nps finished, file deleted");
-  });
+  //   try {
+  //   } catch (error) {
+  //     console.log(error, "err with delete");
+  //   }
+  //   console.log(`time taken ${finish - start} millis`);
+  //   console.log("att nps finished, file deleted");
+  // });
 };
 
 const fireAll = async () => {
@@ -162,10 +174,9 @@ const fireAll = async () => {
     connectionString: DB_STRING,
     ssl: true
   });
-    await scrapeNps();
+  // await scrapeNps();
+
   await addNps(database);
   await attNps(database);
-
-  console.log("all finished!");
 };
 fireAll();
