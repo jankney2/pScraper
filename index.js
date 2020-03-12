@@ -58,8 +58,10 @@ const addNps = async (db, seed) => {
   let start = performance.now();
   const csvFilePath = path.resolve(
     __dirname,
-    "../../../Downloads/NPS+Export+(Based+on+Service+Date).csv"
+    `NPS.csv`
   );
+
+  console.log(csvFilePath, 'faweoifj')
   const jsonArray = await csv().fromFile(csvFilePath);
   let filtered;
   let promises = [];
@@ -92,7 +94,7 @@ const addNps = async (db, seed) => {
     });
 
     try {
-      await db.add_nps([
+       db.add_nps([
         base["Invite Date"],
         base["Response Date"],
         base["Phone"],
@@ -128,6 +130,12 @@ const addNps = async (db, seed) => {
 };
 
 const attNps = async db => {
+  const delPath = path.resolve(
+    __dirname,
+    `/../../../Downloads/NPS+Export+(Based+on+Service+Date).csv`
+  );
+  
+
   let employees = await db.query(
     "select first_name, last_name, proutes_id from employees where proutes_type !=2 and is_active=1 "
   );
@@ -150,10 +158,7 @@ const attNps = async db => {
 
     await db.att_podium_nps([employees[i].proutes_id, likeStr]);
   }
-  const delPath = path.resolve(
-    __dirname,
-    /..\/..\/..\/Downloads\/NPS\+Export\+\(Based\+on\+Service\+Date\)\.csv/
-  );
+  
   fs.unlinkSync(delPath);
   console.log('file deleted')
 
@@ -171,12 +176,18 @@ const attNps = async db => {
 
 const fireAll = async () => {
   let database = await massive({
+    
+    // user: process.env.G_DB_USER,
+    // password: process.env.G_DB_PASS,
+    // database: process.env.G_DB_NAME,
+    // host: process.env.G_DB_HOST,
+    
     connectionString: DB_STRING,
     ssl: true
   });
   // await scrapeNps();
 
-  await addNps(database);
+  await addNps(database, true);
   await attNps(database);
 };
 fireAll();
