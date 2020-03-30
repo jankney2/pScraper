@@ -156,10 +156,10 @@ const attNps = async db => {
     console.log(likeStr, i, employees.length);
     // promises.push(db.att_podium_nps([employees[i].proutes_id, likeStr]));
 
-    await db.att_podium_nps([employees[i].proutes_id, likeStr]);
+     db.att_podium_nps([employees[i].proutes_id, likeStr]);
   }
   
-  fs.unlinkSync(delPath);
+  // fs.unlinkSync(delPath);
   console.log('file deleted')
 
   // Promise.all(promises).then(() => {
@@ -177,13 +177,13 @@ const attNps = async db => {
 const fireAll = async () => {
   let database = await massive({
     
-    // user: process.env.G_DB_USER,
-    // password: process.env.G_DB_PASS,
-    // database: process.env.G_DB_NAME,
-    // host: process.env.G_DB_HOST,
-    
-    connectionString: DB_STRING,
-    ssl: true
+    user: process.env.G_DB_USER,
+    password: process.env.G_DB_PASS,
+    database: process.env.G_DB_NAME,
+    host: process.env.G_DB_HOST,
+    //DO
+    // connectionString: DB_STRING,
+    // ssl: true
   });
   // await scrapeNps();
 
