@@ -55,6 +55,8 @@ const scrapeNps = async () => {
 
 const addNps = async (db, seed) => {
   //change me
+
+  await db.query('delete from podium_nps')
   let start = performance.now();
   const csvFilePath = path.resolve(
     __dirname,
@@ -135,6 +137,7 @@ const attNps = async db => {
     `/../../../Downloads/NPS+Export+(Based+on+Service+Date).csv`
   );
   
+
 
   let employees = await db.query(
     "select first_name, last_name, proutes_id from employees where proutes_type !=2 and is_active=1 "
