@@ -140,14 +140,14 @@ const attNps = async db => {
 
 
   let employees = await db.query(
-    "select first_name, last_name, proutes_id from employees where proutes_type !=2 and is_active=1 "
+    "select first_name, last_name, proutes_id from employees where proutes_type =1 and is_active=1 "
   );
 
   console.log(employees.length, "emp length");
   // and is_active=1
   let promises = [];
-  let start = performance.now();
-  console.log(start / 1000, "start time");
+//fix this to run off of paylocity id instead of pestroutes ID. 
+
   for (let i = 0; i < employees.length; i++) {
     let likeStr = `${employees[i].first_name.replace(
       employees[i].first_name.charAt(0),
