@@ -17,6 +17,10 @@ const scrapeNps = async () => {
     defaultViewport: null
   });
   const page = await browser.newPage();
+
+  try {
+    
+  
   await page.goto("https://auth.podium.com", { waitUntil: "networkidle2" });
   await page.evaluate(() => {
     document.getElementById("emailOrPhoneInput").click();
@@ -42,7 +46,9 @@ const scrapeNps = async () => {
   await page.goto(process.env.P_D_URL, { waitUntil: "networkidle2" });
 
   await page.waitForSelector("i.icon-wrench");
+  await page.waitFor(3000)
   await page.evaluate(async () => {
+
     await document.querySelector("i.icon-wrench").click();
 
     await document.querySelectorAll("div.db-text-body.label")[1].click();
@@ -51,6 +57,9 @@ const scrapeNps = async () => {
   await page.waitFor(3000);
   await browser.close();
   console.log("browser shut down");
+  } catch (error) {
+    console.log(error)
+}
 };
 
 const addNps = async (db, seed) => {
@@ -58,6 +67,8 @@ const addNps = async (db, seed) => {
 
   await db.query('delete from podium_nps')
   let start = performance.now();
+
+
   const csvFilePath = path.resolve(
     __dirname,
     `NPS.csv`
@@ -80,6 +91,7 @@ const addNps = async (db, seed) => {
   }
   console.log(filtered.length, "array length");
   for (let i = 0; i < filtered.length; i++) {
+    console.log(i, filtered.length, 'prog')
     let base = filtered[i];
     //db adder
     console.log("progress", i, "/", filtered.length);
@@ -140,7 +152,8 @@ const attNps = async db => {
 
 
   let employees = await db.query(
-    "select first_name, last_name, proutes_id from employees where proutes_type =1 and is_active=1 "
+    
+    'select distinct employee_id, e_f_name, e_last_name  from paylocity_hours ph'
   );
 
   console.log(employees.length, "emp length");
@@ -148,18 +161,30 @@ const attNps = async db => {
   let promises = [];
 //fix this to run off of paylocity id instead of pestroutes ID. 
 
+
   for (let i = 0; i < employees.length; i++) {
-    let likeStr = `${employees[i].first_name.replace(
-      employees[i].first_name.charAt(0),
+
+
+    
+
+    let likeStr = `${employees[i].e_f_name.replace(
+      employees[i].e_f_name.charAt(0),
       "%_"
-    )}%${employees[i].last_name.replace(
-      employees[i].last_name.charAt(0),
+    )}%${employees[i].e_last_name.replace(
+      employees[i].e_last_name.charAt(0),
       "_"
     )}%`;
-    console.log(likeStr, i, employees.length);
+
+    likeStr=likeStr.replace(/ /gi, '%')
+    // if(+employees[i].employee_id==102254){
+
+      console.log(likeStr, i, employees.length);
+    // }
+
     // promises.push(db.att_podium_nps([employees[i].proutes_id, likeStr]));
 
-     db.att_podium_nps([employees[i].proutes_id, likeStr]);
+     db.att_podium_nps([employees[i].employee_id, likeStr]);
+  
   }
   
   // fs.unlinkSync(delPath);
