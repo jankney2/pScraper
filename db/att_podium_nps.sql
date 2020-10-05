@@ -1,3 +1,7 @@
 update podium_nps
-set owning_tech_pr_id=$1
-where technician like $2
+set owning_tech_payloc_id=$1
+
+
+where lower(technician) like lower($2)
+
+
